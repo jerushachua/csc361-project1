@@ -6,6 +6,8 @@
 #include <netinet/in.h>
 #include <unistd.h> /* for close() for socket */
 #include <stdlib.h>
+#include <dirent.h>
+#include <sys/types.h>
 
 // UDP Server
 
@@ -35,7 +37,30 @@ int main(void)
       fprintf(stderr, "%s\n", strerror(errno));
       exit(EXIT_FAILURE);
     }
-    printf("hello");
     printf("datagram: %.*s\n", (int)recsize, buffer);
+    
+    /* find the requested datagram in the current directory */ 
+    DIR *d; 
+    struct dirent *dir; 
+    d = opendir("."); 
+    
+    /* TODO: figure out how to read from the buffer!
+     *       and compare this datagram to the filenames in the while loop
+     *       (dir->d_name) == buffer) is not doing the right comparision
+     */ 
+    printf("%.*s\n", (int)recsize, buffer);  
+    if (d) {
+        while ((dir = readdir(d)) != NULL) {
+            printf("%s\n", dir->d_name);
+            if(dir->d_name == buffer){
+                printf("The requested file is in this directory yay!");
+                break; 
+            }
+        }
+    }else{
+        printf("Unable to open the directory :("); 
+    }
+    closedir(d); 
+    /* close the directory */
   }
 }
