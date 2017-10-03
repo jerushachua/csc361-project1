@@ -9,15 +9,22 @@
 #include <dirent.h>
 #include <sys/types.h>
 
-// UDP Server
+/* UDP Server */
 
-int main(void)
+
+int main(int argc, char *argv[])
 {
+
+  char dir_name[128]; 
   int sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
   struct sockaddr_in sa;
   char buffer[1024];
   ssize_t recsize;
-  socklen_t fromlen;
+  socklen_t fromlen; 
+  char filename[1024]; 
+  int file_found_flag = -1; 
+  int bytes_sent;
+  char file_contents[1024]; 
 
   memset(&sa, 0, sizeof sa);
   sa.sin_family = AF_INET;
@@ -32,35 +39,63 @@ int main(void)
   }
 
   for (;;) {
+    memset(&buffer[0], 0, sizeof(buffer));
     recsize = recvfrom(sock, (void*)buffer, sizeof buffer, 0, (struct sockaddr*)&sa, &fromlen);
     if (recsize < 0) {
       fprintf(stderr, "%s\n", strerror(errno));
       exit(EXIT_FAILURE);
     }
-    printf("datagram: %.*s\n", (int)recsize, buffer);
-    
-    /* find the requested datagram in the current directory */ 
+     
     DIR *d; 
     struct dirent *dir; 
-    d = opendir("."); 
+    if(argc == 2) d = opendir(argv[1]); 
+    else d = opendir("."); 
+
+    sprintf(filename, "%s", buffer);  
     
-    /* TODO: figure out how to read from the buffer!
-     *       and compare this datagram to the filenames in the while loop
-     *       (dir->d_name) == buffer) is not doing the right comparision
-     */ 
-    printf("%.*s\n", (int)recsize, buffer);  
     if (d) {
-        while ((dir = readdir(d)) != NULL) {
-            printf("%s\n", dir->d_name);
-            if(dir->d_name == buffer){
-                printf("The requested file is in this directory yay!");
-                break; 
-            }
+      printf("Sucessfully opened directory: %s\n", argv[1]); 
+      while ((dir = readdir(d)) != NULL) {
+        
+        file_found_flag = strcmp(dir->d_name, filename); 
+        if(file_found_flag == 0){
+          printf("We found your requested file yay!\n"); 
+          break; 
         }
+      }
+      if(file_found_flag != 0) printf("Not found :(\n");
     }else{
-        printf("Unable to open the directory :("); 
+      printf("%s\n", "Cannot open directory :(\n\0"); 
     }
     closedir(d); 
-    /* close the directory */
+  }
+
+    /* TODO: if file is found, read the contents and send it back to client 
+     *       file_contents is only size 1024
+     *       
+     *       
+     *       
+     *       client: cannot exit loop once packet is sent. close socket on server side? 
+     */ 
+  if(file_found_flag == 0){
+    
+    FILE *input; 
+    input = fopen(filename, "r"); 
+    if(input == NULL) fprintf(stderr, "%s\n", strerror(errno));
+    
+    while(fgets(file_contents, 1024, input)){
+    
+      strcpy(file_contents, buffer); 
+      bytes_sent = sendto(sock, file_contents, strlen(file_contents), 0, (struct sockaddr*)&sa, sizeof sa);    
+      if (bytes_sent < 0) printf("Error in sending msg back to client.\n"); 
+    }
+    fclose(input); 
+  }else{
+    strcpy(file_contents, "Not found :(\n\0"); 
+    bytes_sent = sendto(sock, file_contents, strlen(file_contents), 0, (struct sockaddr*)&sa, sizeof sa); 
+    if(bytes_sent < 0) printf("Error in sending error msg back to client.\n"); 
+    close(sock); 
+
   }
 }
+
