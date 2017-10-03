@@ -17,12 +17,15 @@ int main(int argc, char *argv[])
   struct sockaddr_in sa;
   int bytes_sent;
   char buffer[200];
+  char recbuffer[1024]; 
+  ssize_t recfile; 
+  socklen_t fromlen; 
 
   if (argc == 2){
     printf("The argument supplied is %s\n", argv[1]);
     strcpy(buffer, argv[1]);
   }else{
-    strcpy(buffer, "No filename given. ");
+    printf("No filename given. ");
   }
 
   /* create an Internet, datagram, socket using UDP */
@@ -49,6 +52,14 @@ int main(int argc, char *argv[])
   if (bytes_sent < 0) {
     printf("Error sending packet: %s\n", strerror(errno));
     exit(EXIT_FAILURE);
+  }
+
+  int i; 
+  while(recfile = recvfrom(sock, (void*)recbuffer, sizeof buffer, 0, (struct sockaddr*)&sa, &fromlen)){
+
+    sprintf(recbuffer, "%s", recbuffer); 
+    printf("%s", recbuffer);
+    if(i%10000 == 0) printf("hullo"); i++; //not getting stuck here  
   }
 
   close(sock); /* close the socket */
