@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
   sa.sin_family = AF_INET;
 
    /* IPv4 adresses is a uint32_t, convert a string representation of the octets to the appropriate value */
-  sa.sin_addr.s_addr = htonl(INADDR_ANY);
+  sa.sin_addr.s_addr = inet_addr("10.10.1.100");
 
   /* sockets are unsigned shorts, htons(x) ensures x is in network byte order, set the port to 8080 */
   sa.sin_port = htons(8080);
