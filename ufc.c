@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
   memset(&sa, 0, sizeof sa);
   sa.sin_family = AF_INET; // Adressing is in IPv4
   sa.sin_port = htons(SERV_PORT_NO); // Ensures network byte order, and sets the port no
-  sa.sin_addr.s_addr = htonl(INADDR_ANY); // Converts the address to octets
+  sa.sin_addr.s_addr = inet_addr(SERV_IP_ADDR); // Converts the address to octets
   fromlen = sizeof sa;
 
   bytes_sent = sendto(sock, buffer, strlen(buffer), 0,(struct sockaddr*)&sa, sizeof sa);
