@@ -79,15 +79,14 @@ int main(int argc, char *argv[])
   */
 
   int bytes_received = recvfrom(sock, recbuffer, sizeof recbuffer, 0, (struct sockaddr*)&sa, &fromlen);
-  while(bytes_received != 0){
+  while(bytes_received > 0){
 
-    printf("%d\n", bytes_received);
     if(bytes_received < 0) {
       printf("Error in receiving file data.\n");
       return(EXIT_FAILURE);
     }else{
       printf("Number of bytes received: %d\n", bytes_received);
-      printf("Buffer: %s\n", recbuffer);
+      printf("Buffer: \n%s\n", recbuffer);
 
       if(fwrite(recbuffer, 1, bytes_received, fp) < 0){
         printf("Error writing to file.\n");

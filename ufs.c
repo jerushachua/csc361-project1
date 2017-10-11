@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
       /*
         Send the requested file
       */
-      
+
       if (bytes_sent < 0) printf("Error in sending file to client!!!!!!!.\n");
       while(!feof(input)){
 
@@ -126,6 +126,8 @@ int main(int argc, char *argv[])
         }
 
       }
+      memset(sbuffer, 0, sizeof(sbuffer));
+      bytes_sent = sendto(sock, sbuffer, strlen(sbuffer), 0, (struct sockaddr*)&sa, sizeof sa);
       fclose(input);
 
     }else{
