@@ -8,60 +8,89 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-// UDP Client
+/* UDP Client */
+
+#define RECV_BUFF_SIZE 100 // Receive buffer size
+#define SEND_BUFF_SIZE 1024 // Send buffer size
+#define SERV_PORT_NO 8080 // Port number
+#define SERV_IP_ADDR "10.10.1.100"
 
 int main(int argc, char *argv[])
 {
 
-  int sock;
+  int sock; // UDP socket
   struct sockaddr_in sa;
   int bytes_sent;
   char buffer[200];
-  char recbuffer[1024]; 
-  ssize_t recfile; 
-  socklen_t fromlen; 
+  char recbuffer[1024];
+  ssize_t recfile;
+  socklen_t fromlen;
 
-  if (argc == 2){
-    printf("The argument supplied is %s\n", argv[1]);
-    strcpy(buffer, argv[1]);
-  }else{
-    printf("No filename given. ");
+  /*
+    Checks that a filename is given
+  */
+
+  if (argc == 2) strcpy(buffer, argv[1]);
+  else{
+    printf("No filename given. Unable to continue. \n");
+    return(EXIT_FAILURE);
   }
 
-  /* create an Internet, datagram, socket using UDP */
+  /*
+    Initialization of UDP socket
+  */
+
   sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (-1 == sock) {
-      /* if socket failed to initialize, exit */
       printf("Error Creating Socket");
       exit(EXIT_FAILURE);
     }
 
-  /* Zero out socket address */
   memset(&sa, 0, sizeof sa);
-
-  /* The address is IPv4 */
-  sa.sin_family = AF_INET;
-
-   /* IPv4 adresses is a uint32_t, convert a string representation of the octets to the appropriate value */
-  sa.sin_addr.s_addr = inet_addr("10.10.1.100");
-
-  /* sockets are unsigned shorts, htons(x) ensures x is in network byte order, set the port to 8080 */
-  sa.sin_port = htons(8080);
-
+  sa.sin_family = AF_INET; // Adressing is in IPv4
+  sa.sin_addr.s_addr = htonl(INADDR_ANY); // Converts the address to octets
+  sa.sin_port = htons(SERV_PORT_NO); // Ensures network byte order, and sets the port no
   bytes_sent = sendto(sock, buffer, strlen(buffer), 0,(struct sockaddr*)&sa, sizeof sa);
   if (bytes_sent < 0) {
-    printf("Error sending packet: %s\n", strerror(errno));
+    printf("Error sending filename: %s\n", strerror(errno));
     exit(EXIT_FAILURE);
+  }else{
+    printf("Filename sent: %s\n", buffer);
   }
 
-  int i; 
-  while(recfile = recvfrom(sock, (void*)recbuffer, sizeof buffer, 0, (struct sockaddr*)&sa, &fromlen)){
+  /*
+    Receive the file requested
+  */
 
-    sprintf(recbuffer, "%s", recbuffer); 
-    printf("%s", recbuffer);
-    if(i%10000 == 0) printf("hullo"); i++; //not getting stuck here  
+  FILE *fp;
+  fp = fopen("received.txt","w");
+  if(fp == NULL){
+    printf("Error creating file.\n");
+    return(EXIT_FAILURE);
   }
 
-  close(sock); /* close the socket */
-  return 0;
+  /*
+    Keep looping through until all packets are received
+    Print the received packet data to file
+  */
+
+  while((bytes_received = recvfrom(sock, (void*)recbuffer, sizeof buffer, 0, (struct sockaddr*)&sa, &fromlen))) > 0){
+    printf("Number of bytes received: %d\n". bytes_received);
+    printf("Buffer: %s\n", recbuffer);
+
+    if(fwrite(recbuffer, 1, bytes_received, fp) < 0){
+      printf("Error writing to file.\n");
+      return(EXIT_FAILURE);
+    }
+    memset(recvBuff, '0', sizeof(recvBuff));
+  }
+
+  if(bytes_received < 0) {
+    printf("Error in receiving file data.\n");
+    return(EXIT_FAILURE);
+  }
+
+  fclose(fp);
+  close(sock);
+  return(EXIT_SUCCESS);
 }
