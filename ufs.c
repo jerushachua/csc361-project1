@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
   ssize_t recsize;
   socklen_t fromlen;
   char dir_name[128]; // File directory name
-  char filename[100]; // File name
+  char filename[100]; // Filename
   int file_found_flag = -1;
   int bytes_sent;
 
@@ -112,18 +112,20 @@ int main(int argc, char *argv[])
       /*
         Send the requested file
       */
-
+      
+      if (bytes_sent < 0) printf("Error in sending file to client!!!!!!!.\n");
       while(!feof(input)){
 
+        memset(sbuffer, 0, sizeof(sbuffer));
         int nread = fread(sbuffer, 1, SEND_BUFF_SIZE, input);
         printf("%s", sbuffer);
-        bytes_sent = sendto(sock, sbuffer, sizeof sbuffer, 0, (struct sockaddr*)&sa, sizeof sa);
+        bytes_sent = sendto(sock, sbuffer, strlen(sbuffer), 0, (struct sockaddr*)&sa, sizeof sa);
         if (bytes_sent < 0){
           printf("Error in sending file to client.\n");
           return(EXIT_FAILURE);
         }
+
       }
-      memset(rbuffer, 0, sizeof(rbuffer));
       fclose(input);
 
     }else{

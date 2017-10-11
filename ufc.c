@@ -50,16 +50,18 @@ int main(int argc, char *argv[])
   sa.sin_family = AF_INET; // Adressing is in IPv4
   sa.sin_port = htons(SERV_PORT_NO); // Ensures network byte order, and sets the port no
   sa.sin_addr.s_addr = htonl(INADDR_ANY); // Converts the address to octets
+  fromlen = sizeof sa;
+
   bytes_sent = sendto(sock, buffer, strlen(buffer), 0,(struct sockaddr*)&sa, sizeof sa);
   if (bytes_sent < 0) {
     printf("Error sending filename: %s\n", strerror(errno));
     return(EXIT_FAILURE);
-  }else{
+  } else {
     printf("Filename sent: %s\n", buffer);
   }
 
   /*
-    Receive the file requested
+    Open a new file to store incoming data
   */
 
   FILE *fp;
@@ -70,15 +72,16 @@ int main(int argc, char *argv[])
   }
 
   /*
-    Keep looping through until all packets are received
-    Print the received packet data to file
+    Receive the file requested
+    - Keep looping through until all packets are received
+    - Print the received packet data to file
+    - !! exit the while loop !!
   */
 
-  int bytes_received = 0;
-  while(1){
+  int bytes_received = recvfrom(sock, recbuffer, sizeof recbuffer, 0, (struct sockaddr*)&sa, &fromlen);
+  while(bytes_received != 0){
 
-    bytes_received = recvfrom(sock, recbuffer, sizeof recbuffer, 0, (struct sockaddr*)&sa, &fromlen);
-
+    printf("%d\n", bytes_received);
     if(bytes_received < 0) {
       printf("Error in receiving file data.\n");
       return(EXIT_FAILURE);
@@ -91,6 +94,8 @@ int main(int argc, char *argv[])
         return(EXIT_FAILURE);
       }
       memset(recbuffer, 0, sizeof(recbuffer));
+      bytes_received = recvfrom(sock, recbuffer, sizeof recbuffer, 0, (struct sockaddr*)&sa, &fromlen);
+
     }
 
   }
