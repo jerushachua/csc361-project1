@@ -73,7 +73,10 @@ int main(int argc, char *argv[])
     if(argc == 2) d = opendir(argv[1]);
     else d = opendir(".");
 
+    memset(filename, 0, sizeof(filename));
+    printf("Requested filename: %.*s\n", (int)recsize, rbuffer);
     sprintf(filename, "%s", rbuffer);
+    printf("%s\n", filename);
 
     if (d) {
       printf("Sucessfully opened directory: %s\n", argv[1]);
@@ -82,6 +85,8 @@ int main(int argc, char *argv[])
         file_found_flag = strcmp(dir->d_name, filename);
         if(file_found_flag == 0){
           printf("We found your requested file yay!\n");
+          memset(filename, 0, sizeof(filename));
+          sprintf(filename, "%s/%s", argv[1], rbuffer);
           break;
         }
       }
@@ -99,7 +104,7 @@ int main(int argc, char *argv[])
       input = fopen(filename, "r");
       if(input == NULL){
         printf("Cannot open requested file.\n");
-        int err = sentto(sock, sbuffer, strlen(sbuffer), 0, (struct sockaddr*)&sa, sizeof sa);
+        int err = sendto(sock, sbuffer, strlen(sbuffer), 0, (struct sockaddr*)&sa, sizeof sa);
         if (err < 0) perror("Problem sending error msg.\n");
         return(EXIT_FAILURE);
       }
@@ -110,14 +115,15 @@ int main(int argc, char *argv[])
 
       while(!feof(input)){
 
-        int nread = fread(sbuffer, 1, SEND_BUFF_SIZE, input)
+        int nread = fread(sbuffer, 1, SEND_BUFF_SIZE, input);
         printf("%s", sbuffer);
-        bytes_sent = sendto(sock, sbuffer, strlen(sbuffer), 0, (struct sockaddr*)&sa, sizeof sa);
+        bytes_sent = sendto(sock, sbuffer, sizeof sbuffer, 0, (struct sockaddr*)&sa, sizeof sa);
         if (bytes_sent < 0){
           printf("Error in sending file to client.\n");
           return(EXIT_FAILURE);
         }
       }
+      memset(rbuffer, 0, sizeof(rbuffer));
       fclose(input);
 
     }else{
@@ -127,9 +133,9 @@ int main(int argc, char *argv[])
       if(bytes_sent < 0) printf("Error in sending error msg back to client.\n");
       return(EXIT_FAILURE);
     }
+    closedir(d);
   }
 
-  closedir(d);
   close(sock);
   return(EXIT_SUCCESS);
 }
